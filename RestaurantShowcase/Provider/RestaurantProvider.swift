@@ -3,16 +3,16 @@ import SDWebImage
 import Kingfisher
 import Nuke
 
-public typealias ImageLoadingCompletion = (UIImage?) -> Void
+typealias ImageLoadingCompletion = (UIImage?) -> Void
 
-public protocol ImageProcessorProtocol {
+protocol ImageProviderProtocol {
     func loadImage(url: URL, completion: @escaping ImageLoadingCompletion)
     func preloadImage(url: URL)
     func purge()
 }
 
-public struct SDWeb: ImageProcessorProtocol {
-    public func loadImage(url: URL, completion: @escaping ImageLoadingCompletion) {
+struct SDWeb: ImageProviderProtocol {
+    func loadImage(url: URL, completion: @escaping ImageLoadingCompletion) {
         if let image = SDImageCache.shared().imageFromMemoryCache(forKey: url.absoluteString) {
             completion(image)
         }
@@ -26,19 +26,18 @@ public struct SDWeb: ImageProcessorProtocol {
         }
     }
     
-    public func preloadImage(url: URL) {
-        SDWebImageManager.shared().loadImage(with: url, options: .cacheMemoryOnly, progress: nil) { (image, _, _, _, _, _) in
-        }
+    func preloadImage(url: URL) {
+        SDWebImageManager.shared().loadImage(with: url, options: .cacheMemoryOnly, progress: nil) { (image, _, _, _, _, _) in }
     }
     
-    public func purge() {
+    func purge() {
         SDWebImageManager.shared().imageCache?.clearMemory()
         SDWebImageManager.shared().imageCache?.clearDisk(onCompletion: nil)
     }
 }
 
-public struct KingFisher: ImageProcessorProtocol {
-    public func loadImage(url: URL, completion: @escaping ImageLoadingCompletion) {
+struct KingFisher: ImageProviderProtocol {
+    func loadImage(url: URL, completion: @escaping ImageLoadingCompletion) {
         if let image = KingfisherManager.shared.cache.retrieveImageInMemoryCache(forKey: url.absoluteString) {
             completion(image)
         } else {
@@ -52,43 +51,51 @@ public struct KingFisher: ImageProcessorProtocol {
         }
     }
     
-    public func preloadImage(url: URL) {
-        guard KingfisherManager.shared.cache.imageCachedType(forKey: url.absoluteString) == .none else { return }
-        KingfisherManager.shared.downloader.downloadImage(with: url, options: [], progressBlock: nil) {
-            (image, _, _, _) in
-            if let image = image {
-                KingfisherManager.shared.cache.store(image, forKey: url.absoluteString)
+    func preloadImage(url: URL) {
+//        DispatchQueue.global(qos: .utility).async {
+            guard KingfisherManager.shared.cache.imageCachedType(forKey: url.absoluteString) == .none else { return }
+            KingfisherManager.shared.downloader.downloadImage(with: url, options: [], progressBlock: nil) {
+                (image, _, _, _) in
+                if let image = image {
+                    KingfisherManager.shared.cache.store(image, forKey: url.absoluteString)
+                }
             }
-        }
+//        }
     }
     
-    public func purge() {
+    func purge() {
         KingfisherManager.shared.cache.clearDiskCache()
         KingfisherManager.shared.cache.clearMemoryCache()
     }
 }
 
-public struct Nukee: ImageProcessorProtocol {
-    public func loadImage(url: URL, completion: @escaping ImageLoadingCompletion) {
+struct Nukie: ImageProviderProtocol {
+    func loadImage(url: URL, completion: @escaping ImageLoadingCompletion) {
         let imageRequest = ImageRequest(url: url)
-        ImagePipeline.shared.loadImage(with: imageRequest, progress: nil) { response, error in
-            if let response = response {
-                Nuke.ImageCache.shared.storeResponse(response, for: imageRequest)
-                completion(response.image)
+        if let image = Nuke.ImageCache.shared[imageRequest] {
+            completion(image)
+        } else {
+            ImagePipeline.shared.loadImage(with: imageRequest, progress: nil) { response, error in
+                if let response = response {
+                    Nuke.ImageCache.shared[imageRequest] = response.image
+                    completion(response.image)
+                }
             }
         }
     }
     
-    public func preloadImage(url: URL) {
-        let imageRequest = ImageRequest(url: url)
-        ImagePipeline.shared.loadImage(with: imageRequest, progress: nil) { response, error in
-            if let response = response {
-                Nuke.ImageCache.shared.storeResponse(response, for: imageRequest)
+    func preloadImage(url: URL) {
+//        DispatchQueue.global(qos: .utility).async {
+            let imageRequest = ImageRequest(url: url)
+            ImagePipeline.shared.loadImage(with: imageRequest, progress: nil) { response, error in
+                if let response = response {
+                    Nuke.ImageCache.shared.storeResponse(response, for: imageRequest)
+                }
             }
-        }
+//        }
     }
     
-    public func purge() {
+    func purge() {
         Nuke.ImageCache.shared.removeAll()
     }
 }

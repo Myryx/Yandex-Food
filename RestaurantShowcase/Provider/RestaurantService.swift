@@ -13,15 +13,16 @@ enum ServiceError: Error {
 }
 
 class RestaurantService {
-    let translator: RestaurantTranslator
+    static let basePath = "https://eda.yandex"
     
+    let translator: RestaurantTranslator
     init(translator: RestaurantTranslator = RestaurantTranslator()) {
         self.translator = translator
     }
     
     // I didn't devote much time to the network part, so just a simple request without any wrappers
     func getRestraunts(latitude: Double, longitude: Double, completion: @escaping (Result<[Restaurant], ServiceError>) -> Void) {
-        let url = URL(string: "https://eda.yandex/api/v2/catalog?latitude=\(latitude)&longitude=\(longitude)")!
+        let url = URL(string: "\(RestaurantService.basePath)/api/v2/catalog?latitude=\(latitude)&longitude=\(longitude)")!
 
         let task = URLSession.shared.dataTask(with: url) { [weak self] (data, response, error) in
             guard let self = self else { return }

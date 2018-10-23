@@ -3,7 +3,7 @@ import UIKit
 
 public class RestaurantTableDirector: NSObject, UITableViewDataSource, UITableViewDelegate {
     private var restaurants: [Restaurant] = []
-    private(set) var imageProvider: ImageProcessorProtocol = KingFisher()
+    private(set) var imageProvider: ImageProviderProtocol = Nukie()
     
     public override init() {
         imageProvider.purge()
@@ -13,7 +13,7 @@ public class RestaurantTableDirector: NSObject, UITableViewDataSource, UITableVi
         self.restaurants = restaurants
     }
     
-    func setProvider(_ imageProvider: ImageProcessorProtocol) {
+    func setImageProvider(_ imageProvider: ImageProviderProtocol) {
         self.imageProvider.purge()
         self.imageProvider = imageProvider
     }
@@ -31,9 +31,8 @@ public class RestaurantTableDirector: NSObject, UITableViewDataSource, UITableVi
             let model = restaurants[safe: indexPath.row],
             let cell = tableView.dequeueReusableCell(withIdentifier: "\(RestaurantCell.self)") as? RestaurantCell
         else { return UITableViewCell() }
-        cell.titleLabel.text = model.title
-        cell.descriptionLabel.text = model.description
-        if let url = URL(string: "https://eda.yandex\(model.picturePath!)".replacingSizeParameters) {
+        cell.configure(with: model)
+        if let url = URL(string: model.fullPicturePath()) {
             imageProvider.loadImage(url: url) { image in
 //                guard tableView.visibleCells.contains(cell) else { return }
                 cell.thumbnailImageView.image = image
@@ -47,8 +46,8 @@ extension RestaurantTableDirector: UITableViewDataSourcePrefetching {
     public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
             let model = restaurants[indexPath.row]
-            if let url = URL(string: "https://eda.yandex\(model.picturePath!)".replacingSizeParameters) {
-                imageProvider.preloadImage(url: url)
+            if let url = URL(string: model.fullPicturePath()) {
+                self.imageProvider.preloadImage(url: url)
             }
         }
     }
@@ -62,8 +61,3 @@ fileprivate extension Array {
     }
 }
 
-fileprivate extension String {
-    var replacingSizeParameters: String {
-        return replacingOccurrences(of: "{w}", with: "100").replacingOccurrences(of: "{h}", with: "75")
-    }
-}

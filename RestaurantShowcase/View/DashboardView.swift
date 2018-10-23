@@ -74,6 +74,6 @@ class DashboardView: UIView {
             at: 2,
             animated: true
         )
-        segmentedControl.selectedSegmentIndex = 0
+        segmentedControl.selectedSegmentIndex = 2
     }
 }

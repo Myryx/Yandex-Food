@@ -12,6 +12,7 @@ class RestaurantCell: UITableViewCell {
     fileprivate let thumbnailSize = CGSize(width: 100, height: 75)
     fileprivate let titleInset: CGFloat = 12
     fileprivate let descriptionTopOffset: CGFloat = 4
+    fileprivate let descriptionBottomOffset: CGFloat = 12
     
     lazy var thumbnailImageView: UIImageView = {
         let imageView = UIImageView()
@@ -67,8 +68,8 @@ class RestaurantCell: UITableViewCell {
         descriptionLabel.snp.makeConstraints { make in
             make.left.right.equalTo(titleLabel)
             make.top.equalTo(titleLabel.snp.bottom).offset(descriptionTopOffset)
+            make.bottom.equalToSuperview().inset(descriptionBottomOffset)
         }
-        
     }
     
     func configure(with viewModel: RestaurantCellConfigurable) {
