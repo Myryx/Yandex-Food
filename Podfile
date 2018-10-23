@@ -10,5 +10,4 @@ target 'RestaurantShowcase' do
 	pod 'Kingfisher', '~> 4.0'
 	pod 'Nuke'
 	pod 'SnapKit'
-	pod 'Moya', '~> 11.0'
 end
